@@ -1,0 +1,12 @@
+parcels 84191 lost share 0.0117
+still in transit at day  5 after handover: 61,004 parcels (72.46%); never delivered 1.6%; delivered after promise 11.1%
+still in transit at day 10 after handover: 31,117 parcels (36.96%); never delivered 3.2%; delivered after promise 20.8%
+still in transit at day 15 after handover: 15,647 parcels (18.59%); never delivered 6.3%; delivered after promise 39.0%
+still in transit at day 20 after handover:  9,211 parcels (10.94%); never delivered 10.7%; delivered after promise 59.9%
+still in transit at day 30 after handover:  3,630 parcels (4.31%); never delivered 27.2%; delivered after promise 93.0%
+still in transit at day 45 after handover:  1,611 parcels (1.91%); never delivered 61.2%; delivered after promise 99.8%
+still in transit at day 60 after handover:  1,205 parcels (1.43%); never delivered 81.8%; delivered after promise 99.9%
+not delivered by promise +  0 days: 6,908; never delivered 14.3%
+not delivered by promise +  3 days: 5,321; never delivered 18.5%
+not delivered by promise +  7 days: 3,719; never delivered 26.5%
+not delivered by promise + 14 days: 2,322; never delivered 42.5%

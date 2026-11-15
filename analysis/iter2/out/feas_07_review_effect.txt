@@ -1,0 +1,8 @@
+seller weeks 1,829 (374 sellers); treated 1,277, control 552
+         before   after   n_cf      y
+treated                              
+0        31.024  27.649  1.082 -0.316
+1        39.434  33.180  1.900 -0.371
+difference in log growth (treated minus control): -0.055, 95% CI [-0.121, 0.016] (about -5.4% orders)
+adjusted effect of a bad review: -0.055 (se 0.037)
+sellers with 20+ prior orders: n 998, diff -0.095

@@ -1,0 +1,59 @@
+=== 1. Survey timing rule ===
+review date == min(delivery+1, promise+1): 0.883 | within 1 day: 0.967
+review date == min(delivery+1, promise+2): 0.926 | within 1 day: 0.976
+review date == min(delivery+1, promise+3): 0.895 | within 1 day: 0.976
+gap vs rule (days), share: {-5: 0.002, -4: 0.0, -3: 0.0, -2: 0.0, -1: 0.03, 0: 0.927, 1: 0.018, 2: 0.006, 3: 0.003, 4: 0.003, 5: 0.009}
+2017: rule exact match 0.924
+2018: rule exact match 0.929
+never delivered: review minus promise (days) share: {-10: 0.042, -9: 0.001, -8: 0.002, -7: 0.003, -6: 0.003, -5: 0.002, -4: 0.001, -3: 0.002, -2: 0.001, -1: 0.001, 0: 0.001, 1: 0.027, 2: 0.656, 3: 0.138, 4: 0.05, 5: 0.036, 6: 0.024, 7: 0.008, 8: 0.001, 10: 0.001}
+
+=== 2. End of data selection ===
+                       orders  delivered_after_aug  rev_before_deliv  late_date  median_promise_d
+wk                                                                                               
+2018-06-25/2018-07-01     161                0.000             0.000      0.000            24.124
+2018-07-02/2018-07-08    1196                0.002             0.013      0.014            21.985
+2018-07-09/2018-07-15    1001                0.002             0.044      0.053            20.463
+2018-07-16/2018-07-22    1678                0.002             0.021      0.030            18.577
+2018-07-23/2018-07-29    1646                0.005             0.016      0.027            18.014
+2018-07-30/2018-08-05    2058                0.006             0.053      0.092            13.434
+2018-08-06/2018-08-12    1988                0.006             0.044      0.085            13.592
+2018-08-13/2018-08-19    1875                0.006             0.014      0.036            14.369
+2018-08-20/2018-08-26    1071                0.003             0.008      0.022            12.213
+2018-08-27/2018-09-02     130                0.000             0.000      0.000             6.102
+orders bought 15 to 31 Aug 2018: 2,468; delivered after 31 Aug 0.003; of those, review dated before delivery 1.000
+
+=== 3. Promise length, transit and late rate by purchase month ===
+         orders  promise_med  actual_med  transit_med  late_ts  late_date  late_dispatch  low_review
+m                                                                                                   
+2017-01     800       39.033      10.734        7.144    0.031      0.029          0.223       0.156
+2017-02    1780       30.219      10.971        7.314    0.032      0.030          0.177       0.162
+2017-03    2682       22.604      10.126        7.045    0.056      0.046          0.068       0.142
+2017-04    2404       25.493      12.749        8.900    0.079      0.066          0.073       0.155
+2017-05    3700       23.351       9.793        7.031    0.036      0.030          0.073       0.128
+2017-06    3245       23.420      10.805        7.431    0.039      0.030          0.080       0.127
+2017-07    4026       22.997      10.158        7.056    0.034      0.028          0.078       0.122
+2017-08    4331       22.568       9.770        6.946    0.033      0.029          0.068       0.114
+2017-09    4285       22.138      10.314        7.090    0.052      0.044          0.072       0.124
+2017-10    4631       22.404      10.263        7.048    0.053      0.042          0.078       0.132
+2017-11    7544       22.247      12.699        8.760    0.143      0.124          0.129       0.188
+2017-12    5673       27.416      13.142        9.090    0.084      0.075          0.109       0.164
+2018-01    7269       25.603      11.830        8.036    0.066      0.057          0.102       0.155
+2018-02    6728       24.230      14.266       11.025    0.160      0.141          0.123       0.209
+2018-03    7211       21.341      13.368        9.880    0.214      0.190          0.085       0.228
+2018-04    6939       23.427       9.315        6.911    0.053      0.045          0.060       0.130
+2018-05    6873       21.445       9.148        6.518    0.082      0.066          0.066       0.119
+2018-06    6167       27.268       7.958        5.850    0.014      0.012          0.068       0.108
+2018-07    6292       19.315       7.502        5.301    0.045      0.034          0.089       0.111
+2018-08    6512       13.411       7.014        4.951    0.104      0.062          0.091       0.109
+
+=== 4. Orders with no outcome in iteration 1 labels ===
+handed over, never delivered, not cancelled: 1,104; promise passed before data cut 1.000; low review 0.691; status {'shipped': 1097, 'delivered': 7}
+never handed over, not cancelled: 599; ship limit passed before data cut 1.000; low review 0.874; status {'processing': 299, 'invoiced': 296, 'approved': 2, 'delivered': 2}
+cancelled or unavailable: 1,182; low review 0.806
+late by date rule (delivered): 6,532; adding lost parcels past promise would add 1,104 positives (16.9% more)
+late dispatch (handed over): 8,711; never handed over past ship limit would add 599 (6.9% more)
+lost parcels by purchase month: {Period('2017-01', 'M'): 16, Period('2017-02', 'M'): 21, Period('2017-03', 'M'): 45, Period('2017-04', 'M'): 49, Period('2017-05', 'M'): 55, Period('2017-06', 'M'): 47, Period('2017-07', 'M'): 56, Period('2017-08', 'M'): 41, Period('2017-09', 'M'): 38, Period('2017-10', 'M'): 33, Period('2017-11', 'M'): 73, Period('2017-12', 'M'): 57, Period('2018-01', 'M'): 74, Period('2018-02', 'M'): 57, Period('2018-03', 'M'): 133, Period('2018-04', 'M'): 99, Period('2018-05', 'M'): 54, Period('2018-06', 'M'): 46, Period('2018-07', 'M'): 63, Period('2018-08', 'M'): 47}
+
+=== 5. Deal sellers selling before the won date ===
+deal sellers with any order: 380; first order before won date: 0
+days to first sale quantiles: {'count': 380.0, 'mean': 51.3, 'std': 36.7, 'min': 3.0, '25%': 22.0, '50%': 44.0, '75%': 72.0, 'max': 220.0}

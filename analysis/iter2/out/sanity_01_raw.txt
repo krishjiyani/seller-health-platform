@@ -1,0 +1,241 @@
+
+=== ORDERS: status x missing timestamps ===
+  order_status      n  no_approved  no_carrier  no_delivered
+0    delivered  96478         14.0         2.0           8.0
+1      shipped   1107          0.0         0.0        1107.0
+2     canceled    625        141.0       550.0         619.0
+3  unavailable    609          0.0       609.0         609.0
+4     invoiced    314          0.0       314.0         314.0
+5   processing    301          0.0       301.0         301.0
+6      created      5          5.0         5.0           5.0
+7     approved      2          0.0         2.0           2.0
+
+=== ORDERS: purchase month counts at the edges ===
+          m     n
+0   2016-09     4
+1   2016-10   324
+2   2016-12     1
+3   2017-01   800
+4   2017-02  1780
+5   2017-03  2682
+6   2017-04  2404
+7   2017-05  3700
+8   2017-06  3245
+9   2017-07  4026
+10  2017-08  4331
+11  2017-09  4285
+12  2017-10  4631
+13  2017-11  7544
+14  2017-12  5673
+15  2018-01  7269
+16  2018-02  6728
+17  2018-03  7211
+18  2018-04  6939
+19  2018-05  6873
+20  2018-06  6167
+21  2018-07  6292
+22  2018-08  6512
+23  2018-09    16
+24  2018-10     4
+
+=== ORDERS: timestamp ordering violations ===
+                                 0
+approved_before_purchase       0.0
+carrier_before_purchase      166.0
+carrier_before_approved     1359.0
+delivered_before_carrier      23.0
+delivered_before_purchase      0.0
+estimate_before_purchase       0.0
+delivered_status_no_date       8.0
+cancelled_but_delivered        6.0
+other_status_with_delivery     0.0
+
+=== ORDERS: carrier before approval, size of gap ===
+      n  median_gap_h  p90_gap_h
+0  1359     17.167778  51.602667
+
+=== ORDERS: time of day of estimated date (is it a date, not a timestamp?) ===
+   midnight  count_star()
+0      True         99441
+
+=== ORDERS: late delivery definition, timestamp vs calendar date ===
+                                     0
+delivered                 96204.000000
+late_ts_rule                  0.081317
+late_date_rule                0.067897
+delivered_on_promise_day   1291.000000
+
+=== ORDERS: delivery and promise durations (days) ===
+                                                                                                             0
+actual_purchase_to_delivery      [4.159814814814815, 10.21775462962963, 23.097604166666667, 46.04991319444444]
+promised_purchase_to_estimate  [13.052256944444444, 23.231342592592593, 34.288015046296294, 50.24394965277777]
+transit                          [1.8598796296296296, 7.099768518518519, 18.899972222222235, 40.9830469907407]
+slack_days_early                                  [1.1375173611111111, 11.948940972222221, 21.286030092592593]
+   extreme_transit_over_60d
+0                       225
+
+=== ITEMS: shipping limit checks ===
+                                                                                                           0
+items                                                                                                 112650
+limit_before_purchase                                                                                    0.0
+limit_over_30d_after_purchase                                                                          239.0
+limit_days_q                   [4.006701388888889, 6.011990740740741, 9.996701388888889, 19.007697685185185]
+   orders_with_several_limits
+0                         336
+   orders_with_several_sellers
+0                         1278
+
+=== ITEMS: price and freight ===
+                                  0
+min_price                      0.85
+nonpositive_price               0.0
+zero_freight                  383.0
+freight_above_price          4124.0
+price_q              [74.99, 890.0]
+max_price                    6735.0
+
+=== PAYMENTS: totals vs item totals ===
+                             0
+orders_both            98665.0
+mismatch_over_1brl       249.0
+paid_more                232.0
+paid_less                 17.0
+mismatch_with_voucher      5.0
+  payment_type      n  zero_value  zero_inst
+0      voucher   5775         6.0        0.0
+1  credit_card  76795         0.0        2.0
+2       boleto  19784         0.0        0.0
+3   debit_card   1529         0.0        0.0
+4  not_defined      3         3.0        0.0
+   orders_without_payment  orders_without_items
+0                       1                   775
+
+=== REVIEWS: duplicates and timing ===
+                              0
+n_rows                    99224
+uniq_review_id            98410
+uniq_orders               98673
+orders_multi_review         547
+review_id_on_many_orders    789
+   midnight  count_star()
+0     False            85
+1      True         99139
+  order_status      n  avg_score  low_share  review_before_purchase  answer_before_creation
+0    delivered  96361   4.155717   0.128133                     6.0                     0.0
+1      shipped   1043   2.008629   0.693193                     1.0                     0.0
+2     canceled    609   1.811166   0.765189                    57.0                     0.0
+3  unavailable    597   1.530988   0.847571                     0.0                     0.0
+4     invoiced    313   1.661342   0.817891                     0.0                     0.0
+5   processing    296   1.277027   0.925676                     0.0                     0.0
+6      created      3   2.333333   0.666667                     0.0                     0.0
+7     approved      2   2.500000   0.500000                     0.0                     0.0
+   orders_without_review  share_with_text  share_with_title
+0                    768         0.412975          0.116585
+
+=== REVIEWS: creation date relative to delivery and promise (delivered orders) ===
+                                       0
+before_delivery_day             0.053207
+on_delivery_day                 0.033136
+late_and_before_promise          0.00083
+days_after_delivery_q    [1.0, 1.0, 1.0]
+
+=== CUSTOMERS ===
+                   0
+customer_ids   99441
+people         96096
+repeat_people   2997
+
+=== PRODUCTS ===
+                               0
+n                        32951.0
+no_category                610.0
+no_weight                    2.0
+zero_weight                  4.0
+no_photos                  610.0
+untranslated_categories      3.0
+
+=== SELLERS ===
+                                     0
+sellers                           3095
+sellers_without_items                0
+deal_sellers                       842
+deal_sellers_not_in_seller_table   462
+deal_sellers_with_items            380
+
+=== GEOLOCATION ===
+                            0
+n_rows              1000163.0
+zips                  19015.0
+outside_brazil_box       42.0
+                         0
+customer_zips_missing  157
+customers_missing_geo  278
+sellers_missing_geo      7
+
+=== MQL and DEALS ===
+                             0
+first_mql  2017-06-14 00:00:00
+last_mql   2018-05-31 00:00:00
+n                         8000
+pages                      495
+no_origin                 60.0
+               origin     n
+0      organic_search  2296
+1         paid_search  1586
+2              social  1350
+3             unknown  1099
+4      direct_traffic   499
+5               email   493
+6            referral   284
+7               other   150
+8             display   118
+9   other_publicities    65
+10                NaN    60
+          0        1        2        3        4        5        6        7        8        9        10       11
+m    2017-06  2017-07  2017-08  2017-09  2017-10  2017-11  2017-12  2018-01  2018-02  2018-03  2018-04  2018-05
+mql        4      239      386      312      416      445      200     1141     1028     1174     1352     1303
+          0        1        2        3        4        5        6        7        8        9        10       11
+m    2017-12  2018-01  2018-02  2018-03  2018-04  2018-05  2018-06  2018-07  2018-08  2018-09  2018-10  2018-11
+won        3       73      113      147      207      122       57       37       33       23       21        6
+                               0
+deals                 842.000000
+won_before_contact      1.000000
+median_days_to_close   14.650729
+p90_days_to_close     162.588770
+sdrs                   32.000000
+srs                    22.000000
+                               null_share
+business_segment                 0.001188
+lead_type                        0.007126
+lead_behaviour_profile           0.210214
+has_company                      0.925178
+has_gtin                         0.923990
+average_stock                    0.921615
+business_type                    0.011876
+declared_product_catalog_size    0.918052
+declared_monthly_revenue         0.000000
+   revenue_zero  revenue_positive
+0         797.0              45.0
+                               sr_id  deals
+0   4ef15afb4b2723d8f3d81e51ec7afefe    133
+1   d3d1e91a157ea7f90548eef82f1955e3     82
+2   6565aa9ce3178a5caf6171827af3a9ba     74
+3   85fc447d336637ba1df43e793199fbc8     64
+4   495d4e95a8cf8bbf8b432b612a2aa328     63
+5   2695de1affa7750089c0455f8ce27021     59
+6   fbf4aef3f6915dc0c3c97d6812522f6a     59
+7   de63de0d10a6012430098db33c679b0b     53
+8   9ae085775a198122c5586fa830ff7f2b     51
+9   c638112b43f1d1b86dcabb0da720c901     36
+10  060c0a26f19f4d66b42e0d8796688490     32
+11  068066e24f0c643eb1d089c7dd20cd73     27
+12  a8387c01a09e99ce014107505b92388c     26
+13  9e4d1098a3b0f5da39b0bc48f9876645     24
+14  56bf83c4bb35763a51c2baab501b4c67     24
+15  34d40cdaf94010a1d05b0d6212f9e909     10
+16  4b339f9567d060bcea4f5136b9f5949e      9
+17  9749123c950bf8363ace42cb1c2d0815      7
+18  9d12ef1a7eca3ec58c545c678af7869c      6
+19  0a0fb2b07d841f84fb6714e35c723075      1
+20  b90f87164b5f8c2cfa5c8572834dbe3f      1
+21  6aa3b86a83d784b05f0e37e26b20860d      1

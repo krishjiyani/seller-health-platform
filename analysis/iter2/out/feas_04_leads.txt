@@ -1,0 +1,70 @@
+=== Q1. Win rate by MQL month (deals file only holds wins from Dec 2017) ===
+          mql  won  win_rate  med_close
+mm                                     
+2017-06     4    0     0.000        NaN
+2017-07   239    2     0.008      398.0
+2017-08   386    9     0.023      317.0
+2017-09   312    7     0.022      336.0
+2017-10   416   14     0.034      246.5
+2017-11   445   18     0.040      163.0
+2017-12   200   11     0.055       54.0
+2018-01  1141  152     0.133       17.5
+2018-02  1028  149     0.145       16.0
+2018-03  1174  167     0.142       12.0
+2018-04  1352  183     0.135        9.0
+2018-05  1303  130     0.100       10.0
+MQLs before Dec 2017: 1,802, win rate 0.028; their wins all closed after 2017-12-11 18:07:26
+
+clean MQL cohort (first contact Dec 2017 to May 2018): 6,198, win rate 0.128
+days to close quantiles (cohort wins): {0.25: 5.0, 0.5: 13.0, 0.75: 40.0, 0.9: 113.0}
+
+=== Q2. Lead decay ===
+not won by day  0: 6,197 leads, eventually won 0.128
+not won by day  7: 5,949 leads, eventually won 0.091
+not won by day 14: 5,786 leads, eventually won 0.066
+not won by day 30: 5,653 leads, eventually won 0.044
+not won by day 60: 5,558 leads, eventually won 0.027
+not won by day 90: 5,514 leads, eventually won 0.020
+
+=== Q3. Lead scoring (train Dec 2017 to Mar 2018, test Apr to May 2018) ===
+train 3,543 (win 0.135) | test 2,655 (win 0.118); test leads on pages unseen in train 0.230
+origin only                AUC 0.610 | top 20% win rate 0.157 vs 0.118
+landing page only          AUC 0.568 | top 20% win rate 0.084 vs 0.118
+origin + page + weekday    AUC 0.601 | top 20% win rate 0.143 vs 0.118
+win rate by origin (cohort): {'other': {'mean': 0.035, 'size': 115}, 'email': {'mean': 0.039, 'size': 359}, 'social': {'mean': 0.061, 'size': 1090}, 'other_publicities': {'mean': 0.071, 'size': 42}, 'display': {'mean': 0.075, 'size': 80}, 'referral': {'mean': 0.109, 'size': 220}, 'direct_traffic': {'mean': 0.144, 'size': 390}, 'organic_search': {'mean': 0.144, 'size': 1796}, 'paid_search': {'mean': 0.145, 'size': 1217}, 'unknown': {'mean': 0.206, 'size': 889}}
+
+=== Q4. Sales rep effect on activation (deals won by 1 Jun 2018, first sale within 90 days) ===
+deals 665, activation 0.441; reps with 20+ deals: 12
+                                   mean  size
+sr_id                                        
+9e4d1098a3b0f5da39b0bc48f9876645  0.292    24
+495d4e95a8cf8bbf8b432b612a2aa328  0.333    54
+2695de1affa7750089c0455f8ce27021  0.357    42
+c638112b43f1d1b86dcabb0da720c901  0.361    36
+6565aa9ce3178a5caf6171827af3a9ba  0.373    67
+060c0a26f19f4d66b42e0d8796688490  0.406    32
+de63de0d10a6012430098db33c679b0b  0.436    39
+fbf4aef3f6915dc0c3c97d6812522f6a  0.436    55
+9ae085775a198122c5586fa830ff7f2b  0.450    40
+85fc447d336637ba1df43e793199fbc8  0.451    51
+4ef15afb4b2723d8f3d81e51ec7afefe  0.517   116
+d3d1e91a157ea7f90548eef82f1955e3  0.529    68
+chi square across reps: chi2 13.0, dof 11, p 0.2932
+rep vs lead_type: p 0.3847 (reps get different lead mixes if small)
+rep vs business_type: p 0.5058 (reps get different lead mixes if small)
+rep vs business_segment: p 0.5446 (reps get different lead mixes if small)
+rep activation vs expected from lead type mix:
+                                  actual  expected    n   lift
+sr_id                                                         
+9e4d1098a3b0f5da39b0bc48f9876645   0.292     0.451   24 -0.160
+495d4e95a8cf8bbf8b432b612a2aa328   0.333     0.465   54 -0.132
+6565aa9ce3178a5caf6171827af3a9ba   0.373     0.435   67 -0.062
+2695de1affa7750089c0455f8ce27021   0.357     0.418   42 -0.061
+c638112b43f1d1b86dcabb0da720c901   0.361     0.410   36 -0.049
+060c0a26f19f4d66b42e0d8796688490   0.406     0.417   32 -0.011
+fbf4aef3f6915dc0c3c97d6812522f6a   0.436     0.446   55 -0.010
+85fc447d336637ba1df43e793199fbc8   0.451     0.437   51  0.014
+de63de0d10a6012430098db33c679b0b   0.436     0.413   39  0.023
+9ae085775a198122c5586fa830ff7f2b   0.450     0.423   40  0.027
+d3d1e91a157ea7f90548eef82f1955e3   0.529     0.434   68  0.095
+4ef15afb4b2723d8f3d81e51ec7afefe   0.517     0.422  116  0.096

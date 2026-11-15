@@ -1,0 +1,6 @@
+10+ orders in 90d  h1: n  3718 rate 0.037 | model 0.845 | recency 0.858 | cadence ratio 0.832 | o_90 (inverse) 0.673
+10+ orders in 90d  h3: n  2806 rate 0.091 | model 0.694 | recency 0.713 | cadence ratio 0.691 | o_90 (inverse) 0.643
+3 to 9             h1: n  4345 rate 0.181 | model 0.718 | recency 0.712 | cadence ratio 0.680 | o_90 (inverse) 0.594
+3 to 9             h3: n  3267 rate 0.317 | model 0.664 | recency 0.655 | cadence ratio 0.628 | o_90 (inverse) 0.596
+1 to 2             h1: n  4547 rate 0.445 | model 0.671 | recency 0.654 | cadence ratio 0.577 | o_90 (inverse) 0.574
+1 to 2             h3: n  3478 rate 0.590 | model 0.656 | recency 0.644 | cadence ratio 0.576 | o_90 (inverse) 0.565

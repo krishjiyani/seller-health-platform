@@ -4,11 +4,17 @@ Rules documented here and in the README:
 * Order attribution: an order belongs to the seller with the highest item value in it (ties: lowest seller_id). 1.3% of orders have several sellers.
 * Review dedupe: one review per order, the one with the latest answer timestamp.
 * Dispatch deadline: the latest shipping_limit_date across the order's items.
+* Late delivery: delivered on a later calendar date than the promised date (the promise has no time of
+  day), or handed to the carrier and never delivered although the survey date passed before the data ends (lost).
+* Late dispatch: handed over after the deadline, or never handed over although the deadline passed.
+* Clean cohort: orders promised on or before 29 Aug 2018 (the public sample only keeps reviewed orders, and reviews stop
+  on 31 Aug 2018). Models train and are evaluated on the clean cohort only.
 """
 import duckdb
 import numpy as np
 import pandas as pd
-from .config import RAW, DATA_START, DATA_END, SHRINK_C
+from .config import RAW, DATA_START, DATA_END, SHRINK_C, CLEAN_PROMISE_MAX, SURVEY_AFTER_PROMISE_D, LEAD_COHORT_FROM
+from .taxonomy import TAG_COLS, SELLER_SIDE_TAGS, tag_reviews
 
 FILES = {
     "orders": "olist_orders_dataset.csv", "items": "olist_order_items_dataset.csv",
@@ -82,11 +88,21 @@ def build_orders(con) -> pd.DataFrame:
     assert len(df) == 99441 and df.order_id.is_unique
     df = df[(df.ts_purchase >= DATA_START) & (df.ts_purchase <= DATA_END)].copy()
 
-    # Outcome flags. NaN means "not observable" (e.g. never handed over), never "on time".
-    df["late_dispatch"] = (df.ts_carrier > df.ship_limit).astype(float).where(df.ts_carrier.notna() & df.ship_limit.notna())
-    df["late_delivery"] = (df.ts_delivered > df.ts_estimated).astype(float).where(df.ts_delivered.notna())
-    df["low_review"] = (df.review_score <= 2).astype(float).where(df.review_score.notna())
+    # Outcome flags. NaN means "not observable", never "on time".
     df["failed"] = df.status.isin(["canceled", "unavailable"])
+    survey_by_promise = df.ts_estimated + pd.Timedelta(days=SURVEY_AFTER_PROMISE_D)
+    df["never_dispatched"] = (df.ts_carrier.isna() & df.ship_limit.notna() & (df.ship_limit < DATA_END) & ~df.failed
+                              & ~df.status.isin(["shipped", "delivered"]))
+    df["lost"] = (df.ts_carrier.notna() & df.ts_delivered.isna() & (survey_by_promise < DATA_END) & ~df.failed
+                  & (df.status != "delivered"))
+    df["late_dispatch"] = (df.ts_carrier > df.ship_limit).astype(float).where(df.ts_carrier.notna() & df.ship_limit.notna())
+    df.loc[df.never_dispatched, "late_dispatch"] = 1.0
+    df["late_delivery"] = (df.ts_delivered.dt.normalize() > df.ts_estimated).astype(float).where(df.ts_delivered.notna())
+    df.loc[df.lost, "late_delivery"] = 1.0
+    df["low_review"] = (df.review_score <= 2).astype(float).where(df.review_score.notna())
+    df["clean"] = df.ts_estimated <= CLEAN_PROMISE_MAX
+    # Review survey date: the day after delivery, or promise + 2 days if the parcel has not arrived by then.
+    df["survey_due"] = pd.concat([df.ts_delivered.dt.normalize() + pd.Timedelta(days=1), survey_by_promise], axis=1).min(axis=1)
     df["dispatch_delay_d"] = (df.ts_carrier - df.ship_limit).dt.total_seconds() / 86400
     df["promise_d"] = (df.ts_estimated - df.ts_purchase).dt.total_seconds() / 86400
     df["limit_d"] = (df.ship_limit - df.ts_purchase).dt.total_seconds() / 86400
@@ -98,13 +114,32 @@ def build_orders(con) -> pd.DataFrame:
     df["st_delivered_on_time"] = df.st_dispatched_on_time & (df.late_delivery == 0)
     df["st_good_review"] = df.st_delivered_on_time & (df.review_score >= 4)
 
-    # "Unjust" bad review: 1 or 2 stars on an order the seller dispatched on time but the carrier delivered late.
+    # "Unjust" bad review: 1 or 2 stars on an order the seller dispatched on time but the carrier delivered late or lost.
     df["unjust_review"] = (df.low_review == 1) & (df.late_dispatch == 0) & (df.late_delivery == 1)
+
+    # Complaint tags on 1 and 2 star review text, and the most likely cause of each bad review.
+    low = df.low_review == 1
+    tags = tag_reviews(df.review_text.where(low))
+    for k, col in TAG_COLS.items():
+        df[col] = tags[k].values
+    seller_side = df[[TAG_COLS[k] for k in SELLER_SIDE_TAGS]].any(axis=1)
+    cause = np.select(
+        [df.failed, df.late_dispatch == 1, df.late_delivery == 1, seller_side, df[TAG_COLS["Not received"]]],
+        ["Cancelled or unavailable", "Seller dispatched late or never", "Carrier late or lost (seller on time)",
+         "Wrong, defective or missing item (from text)", "Says not received, though marked delivered"],
+        "On time, other reason or no text")
+    df["bad_review_cause"] = pd.Series(cause, index=df.index).where(low)
 
     assert df.order_id.is_unique
     assert df.seller_id.isna().sum() <= 800, "orders without items should be about 775"
-    assert 0.08 < df.late_dispatch.mean() < 0.10, df.late_dispatch.mean()
+    assert 0.08 < df.late_dispatch.mean() < 0.11, df.late_dispatch.mean()
     assert 0.07 < df.late_delivery.mean() < 0.09, df.late_delivery.mean()
+    late_delivered = df[df.ts_delivered.notna()].late_delivery.mean()
+    assert 0.065 < late_delivered < 0.070, f"late share of delivered orders (calendar date rule) {late_delivered:.4f}"
+    d = df[df.ts_delivered.notna() & df.ts_review.notna()]
+    survey_match = (d.ts_review.dt.normalize() == d.survey_due).mean()
+    assert survey_match > 0.90, f"review survey rule matches only {survey_match:.3f} of delivered orders"
+    assert not (df.lost & df.never_dispatched).any() and df.lost.sum() > 1000 and df.never_dispatched.sum() > 550
     assert (df.st_good_review <= df.st_delivered_on_time).all() and (df.st_delivered_on_time <= df.st_dispatched_on_time).all()
     return df
 
@@ -201,6 +236,9 @@ def build_onboarding(con, orders: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFr
     mql = con.execute("select * from mql").df()
     deals = con.execute("select d.*, m.origin from deals d join mql m using(mql_id)").df()
     mql["won"] = mql.mql_id.isin(deals.mql_id)
+    mql = mql.merge(deals[["mql_id", "won_date"]], on="mql_id", how="left")
+    # Deals only include wins from Dec 2017, so earlier leads look like losers (2.8% win rate vs 12.8%): keep them out.
+    mql["lead_cohort"] = mql.first_contact_date >= LEAD_COHORT_FROM
     o = orders[orders.seller_id.notna()]
     # First sale counts any order containing the seller's item, including orders attributed to a co-seller.
     first = con.execute(f"""
@@ -223,4 +261,26 @@ def build_onboarding(con, orders: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFr
     assert len(deals) == 842 and deals.seller_id.is_unique
     assert deals.first_sale.notna().sum() == 380, deals.first_sale.notna().sum()
     assert (deals.days_to_first_sale.dropna() >= 0).all()
-    return mql[["mql_id", "first_contact_date", "origin", "won"]], deals
+    # One deal in the raw data is won 2 days before its first contact (data quirk); lead decay treats it as day 0.
+    assert (mql.won_date.dropna() < mql.first_contact_date[mql.won_date.notna()]).sum() <= 1
+    return mql[["mql_id", "first_contact_date", "origin", "won", "won_date", "lead_cohort"]], deals
+
+
+def build_new_sellers(con, orders: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """First sale of every seller (any order holding their item, 2016 included) and the day 30 ramp rule.
+
+    Rule table: sellers whose first sale was Mar 2017 to Feb 2018 (so 180 days are observed), grouped by their attributed
+    orders in the first 30 days, with the share that became established (10+ orders in days 31 to 180)."""
+    first = con.execute("""
+        select i.seller_id, min(o.order_purchase_timestamp) first_sale from items i join orders o using(order_id) group by 1""").df()
+    o = orders[orders.seller_id.notna()].merge(first, on="seller_id")
+    age = (o.ts_purchase - o.first_sale).dt.total_seconds() / 86400
+    coh = first[(first.first_sale >= "2017-03-01") & (first.first_sale < "2018-03-01")].set_index("seller_id")
+    o30 = o[age <= 30].groupby("seller_id").size().reindex(coh.index, fill_value=0)
+    later = o[(age > 30) & (age <= 180)].groupby("seller_id").size().reindex(coh.index, fill_value=0)
+    rule = (pd.DataFrame({"orders_30": o30.clip(upper=6), "established": (later >= 10).astype(float)})
+            .groupby("orders_30").established.agg(["mean", "size"])
+            .rename(columns={"mean": "established_rate", "size": "sellers"}).reset_index())
+    assert len(coh) > 1500 and 0.25 < (later >= 10).mean() < 0.35
+    assert rule[rule.orders_30 >= 1].established_rate.is_monotonic_increasing
+    return first, rule

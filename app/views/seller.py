@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -31,12 +32,14 @@ ui.stat(c[2], "Late dispatch, last 180 days", ui.pct(last.late_dispatch_180) if 
         "The seller's own share of orders handed to the carrier after the deadline. Platform average is about 9%.")
 ui.stat(c[3], "Review score (adjusted)", f"{last.review_shrunk_180:.2f}" if last is not None else "n/a",
         "Average stars over 180 days, pulled toward the platform average when the seller has few reviews.")
-ui.stat(c[4], "Unfair bad reviews", f"{int(so.unjust_review.sum())}",
-        "1 or 2 star reviews on orders this seller dispatched on time but the carrier delivered late.")
+reviewed = so[so.ts_review <= T]
+ui.stat(c[4], "Unfair bad reviews", f"{int(reviewed.unjust_review.sum())}",
+        "1 or 2 star reviews on orders this seller dispatched on time but the carrier delivered late or lost.")
 
 if last is not None and pd.notna(last.p_silent_1):
     sig = data.signals(last)
-    st.markdown(f"**Silence forecast ({last.month}):** next month {ui.pct(last.p_silent_1, 0)}, within 3 months {ui.pct(last.p_silent_3, 0)}. "
+    basis = " Scored by days since last order (10+ orders in 90 days)." if pd.notna(last.get("big_seller")) and bool(last.get("big_seller")) else ""
+    st.markdown(f"**Silence forecast ({last.month}):** next month {ui.pct(last.p_silent_1, 0)}, within 3 months {ui.pct(last.p_silent_3, 0)}.{basis} "
                 + ("Warning signals: " + "; ".join(sig) if sig else "No warning signals."))
 
 left, right = st.columns(2)
@@ -59,17 +62,40 @@ with right:
     fig.update_traces(hovertemplate="%{x|%b %Y}: %{y:.0%}")
     st.plotly_chart(ui.style(fig, 280), width="stretch")
 
+bad = reviewed[reviewed.low_review == 1]
+st.markdown(f"**Why this seller's bad reviews happened** ({len(bad):,} reviews with 1 or 2 stars by this date)")
+if len(bad):
+    causes = bad.bad_review_cause.value_counts()
+    left, right = st.columns([3, 2])
+    fig = go.Figure(go.Bar(x=causes.values, y=causes.index, orientation="h", marker=dict(color=ui.BLUE, cornerradius=4),
+                           text=[f"{v}  ({v / len(bad):.0%})" for v in causes.values], textposition="outside", cliponaxis=False,
+                           hovertemplate="%{y}: %{x}<extra></extra>"))
+    fig.update_yaxes(autorange="reversed")
+    fig.update_xaxes(visible=False, range=[0, causes.max() * 1.5])
+    left.plotly_chart(ui.style(fig, 60 + 40 * len(causes), legend=False), width="stretch")
+    seller_side = bad.bad_review_cause.isin(["Seller dispatched late or never", "Wrong, defective or missing item (from text)"]).mean()
+    right.markdown(f"**{seller_side:.0%}** of these point to something the seller controls (late dispatch, or a wrong, defective or "
+                   f"missing item); **{(bad.bad_review_cause == 'Carrier late or lost (seller on time)').mean():.0%}** are the carrier's "
+                   "doing. Item problems come from keyword rules on the review text, so they are a lower bound.")
+else:
+    st.caption("No 1 or 2 star reviews by this date.")
+
 st.markdown("**Evidence: this seller's orders** (newest first). Review text is the customer's own words, in Portuguese.")
 ev = so.sort_values("ts_purchase", ascending=False).head(300).copy()
-ev["dispatch"] = ev.late_dispatch.map({1.0: "Late", 0.0: "On time"}).fillna("Pending or none")
-ev["delivery"] = ev.late_delivery.map({1.0: "Late", 0.0: "On time"}).fillna("Pending or none")
-ev.loc[ev.ts_carrier > T, "dispatch"] = "Pending"
-ev.loc[ev.ts_delivered > T, "delivery"] = "Pending"
+ev["dispatch"] = np.select([ev.ts_carrier <= T, ev.ship_limit <= T], ["On time", "Not dispatched, deadline passed"], "Pending")
+ev.loc[(ev.ts_carrier <= T) & (ev.late_dispatch == 1), "dispatch"] = "Late"
+ev["delivery"] = np.select([ev.ts_delivered <= T, (ev.ts_carrier <= T) & (ev.ts_estimated < T)],
+                           [np.where(ev.late_delivery == 1, "Late", "On time"), "Not delivered, promise passed"], "Pending")
+ev.loc[ev.failed, ["dispatch", "delivery"]] = "Cancelled"
 ev.loc[ev.ts_review > T, ["review_score", "review_text"]] = None
 ev["unfair"] = ev.unjust_review & (ev.ts_review <= T)
-st.dataframe(ev[["order_id", "ts_purchase", "category", "price", "dispatch", "delivery", "review_score", "unfair", "review_text"]]
+tag_names = list(data.TAG_COLS)
+ev["complaint"] = ev[list(data.TAG_COLS.values())].apply(lambda r: ", ".join(n for n, v in zip(tag_names, r) if v), axis=1)
+ev.loc[ev.ts_review > T, "complaint"] = ""
+st.dataframe(ev[["order_id", "ts_purchase", "category", "price", "dispatch", "delivery", "review_score", "unfair", "complaint", "review_text"]]
              .assign(order_id=ev.order_id.str[:8]), hide_index=True, width="stretch", column_config={
     "order_id": "Order", "ts_purchase": st.column_config.DatetimeColumn("Bought", format="DD MMM YYYY"),
     "category": "Category", "price": st.column_config.NumberColumn("Price (R$)", format="%.2f"),
     "dispatch": "Dispatch", "delivery": "Delivery", "review_score": "Stars",
-    "unfair": st.column_config.CheckboxColumn("Unfair review"), "review_text": st.column_config.TextColumn("Review", width="large")})
+    "unfair": st.column_config.CheckboxColumn("Unfair review"), "complaint": "Complaint (from text)",
+    "review_text": st.column_config.TextColumn("Review", width="large")})

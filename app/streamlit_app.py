@@ -13,6 +13,7 @@ pages = {
         st.Page("views/order_journey.py", title="Order Journey", icon=":material/local_shipping:"),
         st.Page("views/onboarding.py", title="Seller Onboarding", icon=":material/how_to_reg:"),
         st.Page("views/lifecycle.py", title="Seller Lifecycle", icon=":material/timeline:"),
+        st.Page("views/reviews.py", title="Why Bad Reviews", icon=":material/reviews:"),
     ],
     "Proof": [
         st.Page("views/evidence.py", title="Evidence and Limits", icon=":material/fact_check:"),

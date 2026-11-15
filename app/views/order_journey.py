@@ -34,6 +34,7 @@ st.plotly_chart(ui.funnel(stages(f)), width="stretch")
 st.caption("Orders bought in the last weeks of the data may not be delivered yet; they show as drop offs. The default range ends in June 2018 for that reason.")
 
 st.subheader("Who caused the late deliveries?")
+st.caption("Late means delivered on a later day than the promised date, or handed to the carrier and never delivered.")
 late = f[(f.late_delivery == 1) & f.late_dispatch.notna()]
 c = st.columns(3)
 ui.stat(c[0], "Late deliveries", f"{len(late):,}")

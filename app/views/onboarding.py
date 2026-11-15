@@ -11,13 +11,32 @@ st.markdown("From marketing lead to a seller who keeps selling. The biggest leak
             "many signed sellers never list a product that sells.")
 
 lead = st.selectbox("Lead type", ["All"] + sorted(d.lead_type.dropna().unique()))
+cohort = q[q.lead_cohort]
 dd = d if lead == "All" else d[d.lead_type == lead]
-stages = ([("Marketing qualified leads", len(q))] if lead == "All" else []) + [
+if lead == "All":
+    dd = dd[dd.mql_id.isin(cohort.mql_id)]
+stages = ([("Marketing qualified leads (Dec 2017 to May 2018)", len(cohort))] if lead == "All" else []) + [
     ("Deal won", len(dd)), ("First sale", int(dd.first_sale.notna().sum())),
     ("Still selling the month after", int((dd.active_month_after_first == 1).sum()))]
 st.plotly_chart(ui.funnel(stages), width="stretch")
-st.caption("Deals were won between Dec 2017 and Nov 2018 while orders end in Aug 2018, so late deals had little time to sell. "
-           "The comparisons below use only deals won at least 90 days before the data ends.")
+st.caption("The deals file only holds wins from Dec 2017, so leads first contacted earlier look like losers (2.8% win rate against "
+           "12.8%). The lead stage therefore uses leads first contacted from Dec 2017. Deals were won up to Nov 2018 while orders end "
+           "in Aug 2018, so late deals had little time to sell; the comparisons below use only deals won at least 90 days before the data ends.")
+
+st.subheader("The lead window: follow up within 14 days")
+decay = data.lead_decay()
+fig = go.Figure(go.Scatter(x=decay.day, y=decay.p_win, mode="lines+markers", line=dict(color=ui.BLUE, width=2), marker=dict(size=8),
+                           customdata=decay.open_leads,
+                           hovertemplate="Not signed by day %{x}: %{y:.1%} still sign (n=%{customdata:,})<extra></extra>"))
+fig.update_yaxes(tickformat=".0%", range=[0, max(0.16, decay.p_win.max() + 0.02)], title="Chance the lead still signs")
+fig.update_xaxes(title="Days since first contact, still not signed")
+st.plotly_chart(ui.style(fig, 320, legend=False), width="stretch")
+dz = decay.set_index("day").p_win
+wins = cohort[cohort.won]
+close_median = ((wins.won_date - wins.first_contact_date).dt.total_seconds() / 86400).clip(lower=0).median()
+st.markdown(f"A new lead signs **{dz.loc[0]:.1%}** of the time. One still unsigned after 7 days signs **{dz.loc[7]:.1%}** of the time, "
+            f"after 14 days **{dz.loc[14]:.1%}**, after 30 days **{dz.loc[30]:.1%}**. Half of all wins close within {close_median:.0f} days. "
+            "Which leads sign could not be predicted from the lead's channel or landing page, so timing sets the follow up.")
 
 runway = d[d.won_date <= data.LAST_ASOF - pd.Timedelta(days=90)].assign(activated=lambda x: x.first_sale.notna())
 left, right = st.columns(2)

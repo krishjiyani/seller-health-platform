@@ -183,3 +183,37 @@ Every stage is defined from a timestamp in the data. Stages are strictly conditi
 **Optional subtitle:** Predicting Intervention Windows Across the Seller and Order Lifecycle in Ecommerce Marketplaces.
 **Pitch:** a decision support console that tells a key account manager which orders and sellers need action this week, built on measured intervention windows, with every prediction validated on future data and every untestable or failed hypothesis documented.
 **Avoid:** claiming the system predicts which sellers will fail. Established seller decline is not predictable beyond recency (section 2.1), and 62% of exits show no prior signal (section 2.2).
+
+## Corrections in iteration 2 (Nov 2026)
+
+A second audit of the raw data (scripts and outputs in `analysis/iter2/`, full plan in `analysis/iter2/SCOPE_ITERATION2.md`) found four definition problems. All were fixed in the pipeline and every number in the app was rebuilt.
+
+| # | Problem | Effect | Fix |
+|---|---|---|---|
+| S1 | `order_estimated_delivery_date` has no time of day, so the timestamp comparison counted 1,291 parcels delivered on the promised day as late | Late delivery 8.11% instead of 6.79%. The 1,291 had a 12.4% bad review rate, like on time orders (9.2%), not late ones (62.4%) | Compare calendar dates |
+| S2 | The review survey follows a rule: the day after delivery, or promise + 2 days if the parcel has not arrived | Exact for 92.7% of delivered orders; section 3 above said the survey only "appears" to fire near the promise | The carrier window closes at promise + 2 days; the console counts down to it |
+| S3 | The public sample only keeps reviewed orders, and reviews stop on 31 Aug 2018 | Orders bought 15 to 31 Aug 2018 were 99.7% delivered before 31 Aug: a fast delivery only sample | Train and evaluate on orders promised by 29 Aug 2018 |
+| S4 | Lost parcels (1,091) and orders never dispatched (597) had no label | The carrier model never saw its worst outcome | Count them as late |
+| S6 | The deals file only holds wins from Dec 2017 | Leads first contacted earlier win 2.8% of the time against 12.8% | Lead numbers use leads from Dec 2017 only |
+
+Effect on the headline results (Sep 2017 to Aug 2018, daily re-scoring):
+
+| Result | Iteration 1 | Iteration 2 |
+|---|---|---|
+| Dispatch window AUC | 0.763 (rule 0.718) | 0.787 with live seller signals (rule 0.723), better than the rule in 12 of 12 months |
+| Carrier window AUC | 0.790 (rule 0.774) | 0.767 (rule 0.744), better than the rule in 11 of 12 months. The old figure was inflated by same day "late" parcels and the fast late August sample |
+| Silence, sellers with 10+ orders in 90 days, 3 months ahead | model 0.683 | 0.717 (scored by days since last order, which beat the model for these sellers) |
+| Bad reviews on late orders written before arrival | 62% | 74% |
+| Unfair bad reviews (seller on time, carrier late or lost) | 2,983 | 3,503 (lost parcels now count) |
+
+New tests on the same data:
+
+| Test | Result | Verdict |
+|---|---|---|
+| Live seller signals for dispatch (open backlog, late handovers in the last 14 days, surge) | 0.768 to 0.787 | Adopted |
+| Live lane congestion for carrier | 0.767 to 0.769, better in 5 of 12 months, calibration worse | Not adopted |
+| Arrival date prediction and a shorter promise | MAE 4.96 days against 5.25 for the lane median; Olist's promise already sits near the 92nd percentile | Not built |
+| Lead scoring on the clean lead cohort | AUC 0.61 | Not built; lead decay curve instead |
+| New seller ramp at day 30 | Model 0.860 against 0.849 for orders in the first 30 days | Rule, not a model |
+| Bad reviews on on time orders | 57% of 1 or 2 star reviews; 46% bad review rate for items from 2+ sellers against 7.5% for one item | Why Bad Reviews page and an order shape flag |
+| Do carrier caused bad reviews cost the seller orders? | -5.5% over 4 weeks, 95% interval -12% to +2% (1,829 seller weeks) | No effect shown |

@@ -1,0 +1,54 @@
+orders in window: 99,092
+
+=== A. Late delivery definition ===
+timestamp rule 0.0813 | date rule 0.0679 | flipped to on time 1,291
+timestamp rule: carrier fault share of late 0.728 | late with late handover 0.272 | low review on time 0.092 vs late 0.541 | unjust reviews 2,983
+date rule: carrier fault share of late 0.723 | late with late handover 0.277 | low review on time 0.092 vs late 0.624 | unjust reviews 2,867
+delivered on promise day: n=1,291, low review share 0.124 (on time overall 0.092, late by date 0.624)
+
+=== B. Review timing ===
+timestamp rule: late orders with review 7,659 | review a full day+ before arrival 0.621 | same day or before 0.705
+date rule: late orders with review 6,379 | review a full day+ before arrival 0.745 | same day or before 0.836
+review minus delivery date, all delivered orders, quantiles (days): {0.05: -1.0, 0.25: 1.0, 0.5: 1.0, 0.75: 1.0, 0.95: 1.0}
+late orders: review minus PROMISE date quantiles: {0.1: 2.0, 0.25: 2.0, 0.5: 2.0, 0.75: 2.0, 0.9: 4.0}
+on time orders: review minus DELIVERY date quantiles: {0.1: 1.0, 0.25: 1.0, 0.5: 1.0, 0.75: 1.0, 0.9: 1.0}
+reviews on never delivered orders: 2,769, low share 0.778
+
+=== C. Timestamp anomalies (window orders) ===
+carrier before purchase: 166
+carrier before approval: 1,359
+delivered before carrier: 19
+transit over 60 days: 214
+dispatch more than 30 days late: 55
+ship limit over 30 days after purchase: 208
+carrier before purchase, by month: {Period('2018-04', 'M'): 8, Period('2018-05', 'M'): 30, Period('2018-06', 'M'): 46, Period('2018-07', 'M'): 37, Period('2018-08', 'M'): 45}
+carrier before purchase, late_dispatch values: {0.0: 166}
+
+=== D. Censoring at data end (31 Aug 2018; raw data runs to Oct 2018) ===
+2018-06: orders 6,167 | no handover 0.004 | not delivered 0.012 | no review 0.004 | late delivery (date rule) 0.012
+2018-07: orders 6,292 | no handover 0.012 | not delivered 0.022 | no review 0.007 | late delivery (date rule) 0.034
+2018-08: orders 6,512 | no handover 0.018 | not delivered 0.025 | no review 0.004 | late delivery (date rule) 0.062
+last delivered timestamp: 2018-10-17 13:22:46 | last carrier: 2018-09-11 19:48:28 | last review: 2018-08-31 00:00:00
+Aug 2018 promised dates after data end (2018-10-17): 2
+
+=== E. Final status snapshot ===
+failed orders 1,182: with handover 0.059, with approval 0.902, delivered 0.001
+orders with status shipped/invoiced/processing (stuck), by month:
+status       approved  created  invoiced  processing  shipped
+ts_purchase                                                  
+2018-01             0        0        15          29       74
+2018-02             0        1         6           6       57
+2018-03             0        0        23           9      133
+2018-04             0        0        14           8       99
+2018-05             0        0        24           6       54
+2018-06             0        0         3           0       43
+2018-07             0        0        13           1       60
+2018-08             0        0        23           0       47
+shipped but never delivered, purchased before Jun 2018: 947
+
+=== F. Reviews ===
+orders with several reviews 547; differing scores 202
+review_ids reused across orders: 789 ids on 1,412 orders (same text and score copied to each order of a multi order purchase)
+
+=== G. Customers ===
+people 95,774; buying 2+ times 3.106%; 3+ times 0.258%
